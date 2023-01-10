@@ -1,2 +1,3 @@
 # learning-cv
-WIP, I guess I'm learning this 🤷‍♀️
+WIP, CV or something~
+I guess I'm learning this 🤷‍♀️
