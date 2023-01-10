@@ -1,5 +1,4 @@
 # Repo specific
-
 *.bmp
 *.dib
 *.jpeg
@@ -30,6 +29,9 @@
 *.mpg
 *.mp3
 *.wav
+
+# VS Code
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
