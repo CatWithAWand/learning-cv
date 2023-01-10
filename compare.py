@@ -1,9 +1,9 @@
+import sys
 import os
-import time
 import cv2
 import numpy as np
 import argparse
-from skimage.metrics import structural_similarity
+# from skimage.metrics import structural_similarity
 
 from metrics import (
     mean_absolute_error,
@@ -34,7 +34,7 @@ from utils import (
 def image_similarity_score(mse, psnr, ssim):
     # Normalize the metrics within a range of 0-100
     # We invert MSE because we want a higher score for a lower MSE
-    mse_norm = 100 - (100 * mse / (255 ** 2))
+    mse_norm = 100 - (100 * mse / (255**2))
     psnr_norm = 100 * (100 if psnr > 100 else psnr) / 100
     ssim_norm = 100 * ssim
 
@@ -56,46 +56,31 @@ def difference(img1, img2):
     return diff
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--first', required=True,
-                        help='path to the first image')
-    parser.add_argument('-s', '--second', required=True,
-                        help='path to the second image')
-    parser.add_argument('-g', '--grayscale', action='store_true',
-                        default=False, help='convert images to grayscale')
-    parser.add_argument('-p', '--pad', action='store_true', default=False,
-                        help='pad images to the same shape before comparing (pads with black, image is centered)')
-    parser.add_argument('-r', '--resize', type=str, default=None,
-                        help='resize images to the same shape before comparing (can be "upscale" or "downscale", uses bicubic interpolation)')
-    parser.add_argument('-hd', '--hausdorff', action='store_true',
-                        default=False, help='computes the Hausdorff distance between the images')
-    parser.add_argument('-v', '--visualize', type=str, default=None,
-                        help='output a visualization of the difference between the images to the specified directory')
-    args = parser.parse_args()
-
+def main(args):
     if not os.path.isfile(args.first) or not is_supported_format(args.first):
         print(f'Invalid first image: "{args.first}" is not a valid file.')
-        exit()
+        sys.exit()
 
     if not os.path.isfile(args.second) or not is_supported_format(args.second):
         print(f'Invalid second image: "{args.second}" is not a valid file.')
-        exit()
+        sys.exit()
 
     if args.pad and args.resize:
         print('Cannot use --pad and --resize at the same time.')
-        exit()
+        sys.exit()
 
     if args.resize and args.resize not in ['upscale', 'downscale']:
         print('Invalid value for --resize. Must be "upscale" or "downscale".')
-        exit()
+        sys.exit()
 
     if args.visualize:
         args.visualize = os.path.abspath(args.visualize)
         if not os.path.isdir(args.visualize):
             print(
-                f'Invalid directory for --visualize: "{args.visualize}" is not a valid directory.')
-            exit()
+                'Invalid directory for --visualize: ' \
+                f'"{args.visualize}" is not a valid directory.'
+            )
+            sys.exit()
 
     color_flag = cv2.IMREAD_GRAYSCALE if args.grayscale else cv2.IMREAD_COLOR
     img1 = cv2.imread(args.first, color_flag, cv2.IMREAD_UNCHANGED)
@@ -105,20 +90,24 @@ if __name__ == '__main__':
     n_channels_2 = get_n_channels(img2)
 
     # If images have different channels, convert to grayscale
-    if n_channels_1 != n_channels_1:
-        print('Images have different number of color channels. Converting to grayscale...')
+    if n_channels_1 != n_channels_2:
+        print(
+            'Images have different number of color channels. ' \
+            'Converting to grayscale...'
+        )
         img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
         img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
     shape1 = get_shape(img1)
-    ratio1 = shape1[0] / shape1[1]
     shape2 = get_shape(img2)
-    ratio2 = shape2[0] / shape2[1]
 
     # Check if images have different dimensions
     if shape1 != shape2 and not (args.pad or args.resize):
-        print('Images have different dimensions. Use the --pad or --resize flags to compare images of different dimensions.')
-        exit()
+        print(
+            'Images have different dimensions. Use the --pad or ' \
+            '--resize flags to compare images of different dimensions.'
+        )
+        sys.exit()
 
     if args.pad:
         target_shape = get_max_shape(img1, img2)
@@ -127,7 +116,8 @@ if __name__ == '__main__':
         img2 = pad_image(img2, target_shape)
     elif args.resize:
         target_shape = get_min_shape(
-            img1, img2) if args.resize == 'downscale' else get_max_shape(img1, img2)
+            img1, img2) if args.resize == 'downscale' else get_max_shape(
+                img1, img2)
         print(f'Resizing images to {target_shape[1]}x{target_shape[0]}...')
         img1 = resize_image(img1, target_shape)
         img2 = resize_image(img2, target_shape)
@@ -142,7 +132,7 @@ if __name__ == '__main__':
 
     score = image_similarity_score(mse, psnr, ssim)
 
-    print(f'Metrics:')
+    print('Metrics:')
     print(f'- MAE: {mae}')
     print(f'- MSE: {mse}')
     print(f'- PSNR: {psnr}')
@@ -159,6 +149,56 @@ if __name__ == '__main__':
         diff = difference(img1, img2)
         file_name1 = os.path.splitext(os.path.basename(args.first))[0]
         file_name2 = os.path.splitext(os.path.basename(args.second))[0]
-        unix_timestamp = str(int(time.time()))
-        write_image(diff, args.visualize,
-                    prefix=f'diff_{file_name1}_{file_name2}', ext='png')
+        write_image(diff,
+                    args.visualize,
+                    prefix=f'diff_{file_name1}_{file_name2}',
+                    ext='png')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f',
+                        '--first',
+                        required=True,
+                        help='path to the first image')
+    parser.add_argument('-s',
+                        '--second',
+                        required=True,
+                        help='path to the second image')
+    parser.add_argument('-g',
+                        '--grayscale',
+                        action='store_true',
+                        default=False,
+                        help='convert images to grayscale')
+    parser.add_argument(
+        '-p',
+        '--pad',
+        action='store_true',
+        default=False,
+        help='pad images to the same shape before comparing ' \
+        '(pads with black, image is centered)')
+    parser.add_argument(
+        '-r',
+        '--resize',
+        type=str,
+        default=None,
+        help=
+        'resize images to the same shape before comparing (can be "upscale" ' \
+            'or "downscale", uses bicubic interpolation)')
+    parser.add_argument(
+        '-hd',
+        '--hausdorff',
+        action='store_true',
+        default=False,
+        help='computes the Hausdorff distance between the images')
+    parser.add_argument(
+        '-v',
+        '--visualize',
+        type=str,
+        default=None,
+        help=
+        'output a visualization of the difference between the images ' \
+            'to the specified directory'
+    )
+
+    main(parser.parse_args())

@@ -69,25 +69,25 @@ def structural_similarity_index(img1, img2):
     n_channels = get_n_channels(img1)
     dmin, dmax = get_dtype_range(img1.dtype.type)
     dr = dmax - dmin
-    L = dr
-    N = (size[0] * size[1]) * n_channels
-    C1 = (0.01 * L) ** 2
-    C2 = (0.03 * L) ** 2
-    C3 = C2 / 2
+    l = dr
+    n = (size[0] * size[1]) * n_channels
+    c1 = (0.01 * l)**2
+    c2 = (0.03 * l)**2
+    c3 = c2 / 2
 
     # Compute the mean
     mu_x = np.mean(img1)
     mu_y = np.mean(img2)
 
     # Compute the variance and covariance
-    sigma_x = np.sqrt(np.sum(np.square(img1 - mu_x)) / (N - 1))
-    sigma_y = np.sqrt(np.sum(np.square(img2 - mu_y)) / (N - 1))
-    sigma_xy = np.sum((img1 - mu_x) * (img2 - mu_y)) / (N - 1)
+    sigma_x = np.sqrt(np.sum(np.square(img1 - mu_x)) / (n - 1))
+    sigma_y = np.sqrt(np.sum(np.square(img2 - mu_y)) / (n - 1))
+    sigma_xy = np.sum((img1 - mu_x) * (img2 - mu_y)) / (n - 1)
 
     # Compute the luminance, contrast, and structure comparison
-    l = (2 * mu_x * mu_y + C1) / (mu_x ** 2 + mu_y ** 2 + C1)
-    c = (2 * sigma_x * sigma_y + C2) / (sigma_x ** 2 + sigma_y ** 2 + C2)
-    s = (sigma_xy + C3) / (sigma_x * sigma_y + C3)
+    l = (2 * mu_x * mu_y + c1) / (mu_x**2 + mu_y**2 + c1)
+    c = (2 * sigma_x * sigma_y + c2) / (sigma_x**2 + sigma_y**2 + c2)
+    s = (sigma_xy + c3) / (sigma_x * sigma_y + c3)
 
     ssim = l * c * s
 
@@ -96,8 +96,9 @@ def structural_similarity_index(img1, img2):
 
 def _chunk_points(points, chunk_size=1500):
     num_chunks = len(points) // chunk_size + (len(points) % chunk_size > 0)
-    chunks = [points[i * chunk_size:(i + 1) * chunk_size]
-              for i in range(num_chunks)]
+    chunks = [
+        points[i * chunk_size:(i + 1) * chunk_size] for i in range(num_chunks)
+    ]
 
     return chunks
 
@@ -117,21 +118,27 @@ def hausdorff_distance(img1, img2):
     max_workers = max(1, os.cpu_count() // 2)
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Compute the distance
-        min_distances_x_futures = [executor.submit(
-            kdtree_y.query, chunk) for chunk in chunks_x]
-        min_distances_y_futures = [executor.submit(
-            kdtree_x.query, chunk) for chunk in chunks_y]
+        min_distances_x_futures = [
+            executor.submit(kdtree_y.query, chunk) for chunk in chunks_x
+        ]
+        min_distances_y_futures = [
+            executor.submit(kdtree_x.query, chunk) for chunk in chunks_y
+        ]
 
-        min_distances_x = [future.result()[0]
-                           for future in min_distances_x_futures]
-        min_distances_y = [future.result()[0]
-                           for future in min_distances_y_futures]
+        min_distances_x = [
+            future.result()[0] for future in min_distances_x_futures
+        ]
+        min_distances_y = [
+            future.result()[0] for future in min_distances_y_futures
+        ]
 
     # Flatten the lists of minimum distances
     min_distances_x = [
-        distance for chunk in min_distances_x for distance in chunk]
+        distance for chunk in min_distances_x for distance in chunk
+    ]
     min_distances_y = [
-        distance for chunk in min_distances_y for distance in chunk]
+        distance for chunk in min_distances_y for distance in chunk
+    ]
 
     # Compute the maximum of the minimum distances
     d_x = max(min_distances_x)
