@@ -80,14 +80,11 @@ def main(args):
 
         images_filepaths = [args.input]
 
-    # Load images
-    images = {
-        filepath: cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
-        for filepath in images_filepaths
-    }
-
-    for filepath, image in images.items():
+    total_images = len(images_filepaths)
+    for idx, filepath in enumerate(images_filepaths):
+        print(f'Processing image ({idx + 1}/{total_images}): {filepath}')
         file_name = os.path.splitext(os.path.basename(filepath))[0]
+        image = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
 
         if args.grid or args.grid_from_size:
             coords = get_grid(image,

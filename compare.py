@@ -82,6 +82,8 @@ def main(args):
             )
             sys.exit()
 
+    print(f'Comparing images {args.first} and {args.second}')
+
     color_flag = cv2.IMREAD_GRAYSCALE if args.grayscale else cv2.IMREAD_COLOR
     img1 = cv2.imread(args.first, color_flag, cv2.IMREAD_UNCHANGED)
     img2 = cv2.imread(args.second, color_flag, cv2.IMREAD_UNCHANGED)
